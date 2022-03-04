@@ -10,7 +10,7 @@ import numpy as np
 
 
 # 初始排程的搬運成本
-def move_fitness1(solutions):
+def move_fitness1(solutions,jobs):
     # 將搬運成本表轉換為字典
     path = r"Mk01搬運成本表.xlsx"
     dataTable = np.array(pd.read_excel(path, index_col=None, engine='openpyxl'))
@@ -19,15 +19,16 @@ def move_fitness1(solutions):
         for j in range(dataTable.shape[1]):
             dataDict['{0}{1}'.format(i, j)] = dataTable[i][j] 
             
-    # 計算每個job的機台搬運成本之總和
+    # 平均計算每個job的機台搬運成本之總和
     fitness = 0
     for i in range(len(solutions)):
         start = solutions[i][0].tolist().index(1)
         for j in range(1, len(solutions[i])):
             end = solutions[i][j].tolist().index(1)
             fitness += dataDict['{0}{1}'.format(start, end)]
+            start = end
 
-    return fitness
+    return float(fitness)/jobs
 
 # 機台故障的搬運成本
 def move_fitness2(before_assignment, after_assignment):
@@ -99,10 +100,10 @@ def Utilize_rate(each_machine_time, makespan, machine):
         if(each_machine_time[i]!=[]):
             for item in each_machine_time[i]:
                 usage_time+=item[1]-item[0]
-            machine_rate = (usage_time)/makespan
+            machine_rate = (usage_time)/makespan 
         else:
             machine_rate = 0
-        counter_rate+=machine_rate
+        counter_rate+=(1-machine_rate)
     avg_rate = counter_rate/machine
     return avg_rate
 
@@ -124,7 +125,7 @@ def On_time_fit(req_date, real_date, job):
     count = 0
     for i in range(job):
         diff = real_date[i]-req_date[i]
-        if(diff>=0): #若有遲交情形發生，才加上遲交時間長度
+        if(diff>0): #若有遲交情形發生，才加上遲交時間長度
             # total+=diff
             count+=1
     return float(count)/job
@@ -183,8 +184,11 @@ def Load_balance_nor(data):
 
 # 準交率適應度之正規化
 def On_time_fit_nor(data):
-    data_avg = 355.34
-    data_std = 87.91
+    data_avg = 50.0
+    data_std = 0.5
+    
+    # data_avg = 355.34
+    # data_std = 87.91
     
     normalized_data = (data - data_avg)/(data_std)  
     

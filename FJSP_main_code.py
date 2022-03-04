@@ -30,10 +30,11 @@ def get_data(path):
 
 #定義每個JOB的製程數
 Job_Op_Num = np.array([6, 5, 5, 5, 6, 6, 5, 5, 6, 6])
-
+# Job_Op_Num = np.array([6, 6, 6, 6, 6, 6, 5, 6, 5, 6])
 onematrix = np.ones(10, dtype=int)
+
 #定義客戶交期(預設)
-customer_date = onematrix*42
+customer_date = onematrix*41
 # customer_date = np.array([38, 38, 38, 38, 38, 38, 38, 38, 38, 38])
 
 
@@ -505,9 +506,9 @@ class PSOSolver():
         return critical_path
     
     #####統整fitness#####
-    def Fitness_func(self, indx, OPS, machine_assign,solution, mo_weight=0.4, iu_weight=0.4, lbs_weight=0.1, otf_weight=0.1):
+    def Fitness_func(self, indx, OPS, machine_assign,solution, lbs_weight=0.1, iu_weight=0.2, mo_weight=0.3, otf_weight=0.4):
         # 考慮不同指標的適應度
-        move_fit = move_fitness1(solution) # 搬運成本
+        move_fit = move_fitness1(solution,self.job) # 搬運成本
         max_end_time, job_op_seq, job_finish = Schedule(machine_assign, self.each_machine_time[indx], OPS, self.record_time[indx], self.machine, self.job, self.Find_op_time, self.Job_Op_Num) #結束時間
         inv_utilize_fit = Utilize_rate(self.each_machine_time[indx], max_end_time, self.machine)*100 # 反稼動率
         load_balance_std = Load_balance(self.each_machine_time[indx], self.machine)
@@ -525,15 +526,15 @@ class PSOSolver():
         #                   iu_weight*inv_utilize_fit_N +\
         #                   lbs_weight*load_balance_std_N+\
         #                   otf_weight*on_time_fit_N)
-            
         # 不進行正規化
         total_fitness = (mo_weight*move_fit+\
                           iu_weight*inv_utilize_fit +\
                           lbs_weight*load_balance_std+\
                           otf_weight*on_time_fit)/4
-            
+        
+        
         # total_fitness = max_end_time
-        fitness_array = np.array([{inv_utilize_fit}, {load_balance_std}, {on_time_fit}, {max_end_time}])
+        fitness_array = np.array([load_balance_std, inv_utilize_fit, move_fit, on_time_fit, max_end_time])
         # fitness_array = np.array([{max_end_time}])
 
         
@@ -561,9 +562,11 @@ t = 0
 ddr = []
 for i in range(1):
 
-    solver = PSOSolver(particle_number=20,machine=6, job=10, iterations =50, cognition_factor=2, \
-                       social_factor=2, inertial_factor=0.8, data=mk01_data, Job_Op_Num=Job_Op_Num, request_date=customer_date)
+    solver = PSOSolver(particle_number=50,machine=6, job=10, iterations =100, cognition_factor=0.5, \
+                       social_factor=0.5, inertial_factor=2, data=mk01_data, Job_Op_Num=Job_Op_Num, request_date=customer_date)
     solver.Initialize()
+    
+    
     ####開始迭代#####
     start = time.time()
     
@@ -608,19 +611,19 @@ for i in range(1):
 
 print(f"測試10次平均花費:{t/10}秒")
 
-from matplotlib import pyplot as plt
-myset = list(set(ddr))  #myset是另外一個列表，裡面的內容是mylist裡面的無重複 項
-height = []
-for item in myset:
-    height.append(ddr.count(item))
-plt.bar(myset, height, color="#6B8F9B", align="center")
-plt.ylabel('times')
-plt.xlabel('fitness')
-plt.xticks(fontsize=12)
-p = np.arange(0,len(ddr),1)
-plt.yticks(p,fontsize=12)
-plt.xticks(range(int(min(ddr)),int(max(ddr)+1),1))
-plt.savefig('stability_test.png')
+# from matplotlib import pyplot as plt
+# myset = list(set(ddr))  #myset是另外一個列表，裡面的內容是mylist裡面的無重複 項
+# height = []
+# for item in myset:
+#     height.append(ddr.count(item))
+# plt.bar(myset, height, color="#6B8F9B", align="center")
+# plt.ylabel('times')
+# plt.xlabel('fitness')
+# plt.xticks(fontsize=12)
+# p = np.arange(0,len(ddr),1)
+# plt.yticks(p,fontsize=12)
+# plt.xticks(range(int(min(ddr)),int(max(ddr)+1),1))
+# plt.savefig('stability_test.png')
 
 
 ######################################################################################################################
